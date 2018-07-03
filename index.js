@@ -22,6 +22,9 @@ function remove(a, element) {
 
   if (index !== -1) {
     a.splice(index, 1)
+    return true
+  } else {
+    return false
   }
 }
 
@@ -46,11 +49,17 @@ io.on('connection', function (socket) {
       group = { title: card.text, cards: [card], votes: 0 }
       groups.push(group)
     }
+
+    socket.emit('group', groups)
+    socket.broadcast.emit('group', groups)
+    socket.emit('canGroup')
+    socket.broadcast.emit('canGroup')
+  })
+
+  socket.on('startVoting', function () {
     for (i = 0; i < usersNum; i++) {
       usersVoted[i] = Math.max(groups.length - 1, 1)
     }
-    socket.emit('group', groups)
-    socket.broadcast.emit('group', groups)
     socket.emit('canVote', usersVoted[0])
     socket.broadcast.emit('canVote', usersVoted[0])
   })
@@ -59,9 +68,11 @@ io.on('connection', function (socket) {
     const fromGroupIndex = groups.map(e => e.title).indexOf(move.from)
     const toGroupIndex = groups.map(e => e.title).indexOf(move.to)
 
-    remove(groups[fromGroupIndex].cards, move.card)
-    move.card.group = groups[toGroupIndex].title
-    groups[toGroupIndex].cards.push(move.card)
+    removed = remove(groups[fromGroupIndex].cards, move.card)
+    if (removed) {
+      move.card.group = groups[toGroupIndex].title
+      groups[toGroupIndex].cards.push(move.card)
+    }
 
     socket.emit('group', groups)
     socket.broadcast.emit('group', groups)

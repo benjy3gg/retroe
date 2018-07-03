@@ -16,6 +16,10 @@
   <div id="app">
     <div class="container">
       <div class="row">
+        <button type="button" class="btn btn-primary float-right" v-on:click="startGrouping()">Start Grouping</button>
+        <button type="button" class="btn btn-primary float-right" v-on:click="startVoting()">Start Voting</button>
+      </div>
+      <div class="row">
         <div class="col">
           <h2 class="text-center">What went well?</h2>
           <card-item-new :cardtype=true></card-item-new>
@@ -32,13 +36,15 @@
       </div>
       <hr>
       <div class="row">
-        <div class="col align-self-center">
-          <button type="button" class="btn btn-primary" v-on:click="startGrouping()">Start Grouping</button>
-          <group-box v-for="group in groups" v-bind:group="group">
+        <div class="col">
+
         </div>
-        </v-for>
+      </div>
+      <div class="row">
+        <group-box v-for="group in groups" v-bind:group="group"></group-box>
       </div>
     </div>
+  </div>
   </div>
 
 
@@ -86,7 +92,7 @@
     Vue.component('card-item', {
       props: ['card'],
       template:
-        '<div class="input-group" draggable="true" v-on:dragstart="dragstart" :id="card.key">\
+        '<div class="input-group" :draggable="draggable" v-on:dragstart="dragstart" :id="card.key">\
           <input type="text" class="form-control" id="validationCustomUsername" aria-describedby="inputGroupPrepend" required :value="card.text" disabled>\
         </div>',
       methods: {
@@ -95,20 +101,27 @@
           ev.dataTransfer.setData("card", JSON.stringify(this.card));
           ev.dataTransfer.setData("from", this.card.group);
         }
+      },
+      computed: {
+        draggable: function () {
+          return this.$root.grouping
+        }
       }
     })
 
     Vue.component('group-box', {
       props: ['group'],
       template:
-        '<div class="card bg-light mb-3" style="max-width: 18rem;">\
-            <div class="card-header"><div class="text-center">Group {{group.title}}</div></div>\
+        '<div class="col-md-3">\
+        <div class="card bg-light mb-3" style="max-width: 18rem;">\
+            <div class="card-header"><div class="text-center">Group {{group.title}} - Votes: {{group.votes}}</div></div>\
             <button v-if="group.cards.length > 0" type="button" class="btn btn-primary" v-on:click="vote()">Vote</button>\
-            <div>{{group.votes}}</div>\
+            <div></div>\
             <div class="card-body" droppable="true" v-on:dragover="dragover" v-on:drop="drop">\
               <card-item v-for="card in group.cards" v-bind:card="card" v-bind:key="card.id"></card-item>\
             </div>\
-          </div> ',
+          </div>\
+        </div> ',
       methods: {
         dragover: function (ev) {
           ev.preventDefault();
@@ -120,7 +133,16 @@
         },
         vote: function (ev) {
           var vote = { userid: app.userid, title: this.group.title }
-          socket.emit('vote', vote)
+          if (this.canVote) {
+            socket.emit('vote', vote)
+          } else {
+            alert("Cant vote yet.")
+          }
+        }
+      },
+      computed: {
+        canVote: function () {
+          return this.$root.voting
         }
       }
     })
@@ -136,11 +158,17 @@
         votes: [],
         groups: [],
         actions: [],
-        message: 'Hello Vue!'
+        message: 'Hello Vue!',
+        grouping: false,
+        voting: false
       },
       methods: {
         startGrouping: function () {
           socket.emit('startGrouping')
+        },
+        startVoting: function () {
+          socket.emit('startVoting')
+
         }
       }
     })
@@ -154,6 +182,14 @@
 
     socket.on('canVote', (votes) => {
       alert('You can now vote ' + votes + ' times.')
+      app.grouping = false
+      app.voting = true
+    })
+
+    socket.on('canGroup', (votes) => {
+      alert('You can group by dragging now.')
+      app.grouping = true
+      app.voting = false
     })
 
     socket.on('cardMoved', (groups) => {
