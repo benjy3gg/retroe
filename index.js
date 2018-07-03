@@ -46,11 +46,13 @@ io.on('connection', function (socket) {
       group = { title: card.text, cards: [card], votes: 0 }
       groups.push(group)
     }
-    for (user of usersVoted) {
-      user = Math.max(groups.length - 1, 1)
+    for (i = 0; i < usersNum; i++) {
+      usersVoted[i] = Math.max(groups.length - 1, 1)
     }
     socket.emit('group', groups)
     socket.broadcast.emit('group', groups)
+    socket.emit('canVote', usersVoted[0])
+    socket.broadcast.emit('canVote', usersVoted[0])
   })
 
   socket.on('moveCard', function (move) {

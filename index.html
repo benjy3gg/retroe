@@ -12,23 +12,25 @@
 
 <body>
   <h1 class="text-center">Retrööö</h1>
+  <hr>
   <div id="app">
     <div class="container">
       <div class="row">
         <div class="col">
-          <h2>What went well?</h2>
+          <h2 class="text-center">What went well?</h2>
           <card-item-new :cardtype=true></card-item-new>
           <card-item v-for="card in goodCards" v-bind:card="card" v-bind:key="card.id">
           </card-item>
         </div>
 
         <div class="col">
-          <h2>What was bad?</h2>
+          <h2 class="text-center">What was bad?</h2>
           <card-item-new :cardtype=false></card-item-new>
           <card-item v-for="card in badCards" v-bind:card="card" v-bind:key="card.id">
           </card-item>
         </div>
       </div>
+      <hr>
       <div class="row">
         <div class="col align-self-center">
           <button type="button" class="btn btn-primary" v-on:click="startGrouping()">Start Grouping</button>
@@ -100,7 +102,7 @@
       props: ['group'],
       template:
         '<div class="card bg-light mb-3" style="max-width: 18rem;">\
-            <div class="card-header"><input :value="group.title"></div>\
+            <div class="card-header"><div class="text-center">Group {{group.title}}</div></div>\
             <button v-if="group.cards.length > 0" type="button" class="btn btn-primary" v-on:click="vote()">Vote</button>\
             <div>{{group.votes}}</div>\
             <div class="card-body" droppable="true" v-on:dragover="dragover" v-on:drop="drop">\
@@ -148,6 +150,10 @@
 
     socket.on('group', (groups) => {
       app.groups = groups
+    })
+
+    socket.on('canVote', (votes) => {
+      alert('You can now vote ' + votes + ' times.')
     })
 
     socket.on('cardMoved', (groups) => {
