@@ -11,13 +11,14 @@
 </head>
 
 <body>
-  <h1 class="text-center">Retrööö</h1>
+  <h1 class="text-center">Endor Retroe</h1>
   <hr>
   <div id="app">
     <div class="container">
       <div class="row">
         <button type="button" class="btn btn-primary float-right" v-on:click="startGrouping()">Start Grouping</button>
-        <button type="button" class="btn btn-primary float-right" v-on:click="startVoting()">Start Voting</button>
+        <button type="button" class="btn btn-primary float-right" v-on:click="startVoting()" :disabled="!grouping">Start Voting</button>
+        <button type="button" class="btn btn-warning float-right" v-on:click="restart()">Restart</button>
       </div>
       <div class="row">
         <div class="col">
@@ -168,12 +169,22 @@
         },
         startVoting: function () {
           socket.emit('startVoting')
-
-        }
+        },
+        restart: function () {
+          socket.emit('restart')
+        },
       }
     })
     socket.on('connected', (userid) => {
       app.userid = userid
+    })
+
+    socket.on('restart', (restart) => {
+      app.groups = restart.groups
+      app.goodCards = restart.goodCards
+      app.badCards = restart.badCards
+      app.grouping = false
+      app.voting = false
     })
 
     socket.on('group', (groups) => {

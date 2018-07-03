@@ -41,6 +41,17 @@ io.on('connection', function (socket) {
 
   socket.emit('group', groups)
 
+  socket.on('restart', function () {
+    groups = []
+    goodCards = []
+    badCards = []
+    restart = {}
+    restart.groups = groups
+    restart.goodCards = goodCards
+    restart.badCards = badCards
+    socket.emit('restart', restart)
+  })
+
   socket.on('startGrouping', function () {
     var cards = [...goodCards, ...badCards]
     groups = []
