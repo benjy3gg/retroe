@@ -101,7 +101,7 @@
       template:
         '<div class="card bg-light mb-3" style="max-width: 18rem;">\
             <div class="card-header"><input :value="group.title"></div>\
-            <button v-if="group.cards.length > 0" type="button" class="btn btn-primary" v-on:click="vote(text)">Vote</button>\
+            <button v-if="group.cards.length > 0" type="button" class="btn btn-primary" v-on:click="vote()">Vote</button>\
             <div>{{group.votes}}</div>\
             <div class="card-body" droppable="true" v-on:dragover="dragover" v-on:drop="drop">\
               <card-item v-for="card in group.cards" v-bind:card="card" v-bind:key="card.id"></card-item>\
