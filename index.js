@@ -88,6 +88,8 @@ io.on('connection', function (socket) {
     socket.broadcast.emit('card', { text: card.text, userid: card.userid, type: card.type })
   })
 })
-http.listen(80, function () {
+
+var port = process.env.PORT || 8080;
+http.listen(port, function () {
   console.log('listening on *:80')
 })
