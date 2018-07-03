@@ -1,0 +1,168 @@
+<!doctype html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <link rel="stylesheet" href="https://unpkg.com/bootstrap-material-design@4.1.1/dist/css/bootstrap-material-design.min.css"
+    integrity="sha384-wXznGJNEXNG1NFsbm0ugrLFMQPWswR3lds2VeinahP8N0zJw9VWSopbjv2x7WCvX" crossorigin="anonymous">
+
+  <title>Socket.IO chat</title>
+</head>
+
+<body>
+  <h1 class="text-center">Retrööö</h1>
+  <div id="app">
+    <div class="container">
+      <div class="row">
+        <div class="col">
+          <h2>What went well?</h2>
+          <card-item-new :cardtype=true></card-item-new>
+          <card-item v-for="card in goodCards" v-bind:card="card" v-bind:key="card.id">
+          </card-item>
+        </div>
+
+        <div class="col">
+          <h2>What was bad?</h2>
+          <card-item-new :cardtype=false></card-item-new>
+          <card-item v-for="card in badCards" v-bind:card="card" v-bind:key="card.id">
+          </card-item>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col align-self-center">
+          <button type="button" class="btn btn-primary" v-on:click="startGrouping()">Send</button>
+          <group-box v-for="group in groups" v-bind:group="group">
+        </div>
+        </v-for>
+      </div>
+    </div>
+  </div>
+
+
+  <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN"
+    crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/popper.js@1.12.6/dist/umd/popper.js" integrity="sha384-fA23ZRQ3G/J53mElWqVJEGJzU0sTs+SvzG8fXVWP+kJQ1lwFAOkcUOysnlKJC33U"
+    crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/bootstrap-material-design@4.1.1/dist/js/bootstrap-material-design.js" integrity="sha384-CauSuKpEqAFajSpkdjv3z9t8E7RlpJ1UP0lKM/+NdtSarroVKu069AlsRPKkFBz9"
+    crossorigin="anonymous"></script>
+  <script>$(document).ready(function () { $('body').bootstrapMaterialDesign(); });</script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+  <script>
+    var socket = io();
+
+    Vue.component('card-item-new', {
+      props: ['cardtype'],
+      data: () => {
+        return {
+          text: '',
+        }
+      },
+      template:
+        '<div class="input-group">\
+          <input type="text" class="form-control" id="validationCustomUsername" :placeholder=placeholder aria-describedby="inputGroupPrepend" v-model="text" required>\
+          <button v-if="text != \'\'" type="button" class="btn btn-primary" v-on:click="send(text)">Send</button>\
+        </div>',
+      methods: {
+        send: function () {
+          socket.emit('send', { text: this.text, userid: this.$root.userid, type: this.cardtype, group: "" })
+          this.text = ''
+        }
+      },
+      computed: {
+        placeholder: function () {
+          if (this.cardtype) {
+            return 'Good'
+          } else {
+            return 'Bad'
+          }
+        }
+      }
+    })
+
+    Vue.component('card-item', {
+      props: ['card'],
+      template:
+        '<div class="input-group" draggable="true" v-on:dragstart="dragstart" :id="card.key">\
+          <input type="text" class="form-control" id="validationCustomUsername" aria-describedby="inputGroupPrepend" required :value="card.text" disabled>\
+        </div>',
+      methods: {
+        dragstart: function (ev) {
+          dragged = this
+          ev.dataTransfer.setData("card", JSON.stringify(this.card));
+          ev.dataTransfer.setData("from", this.card.group);
+        }
+      }
+    })
+
+    Vue.component('group-box', {
+      props: ['group'],
+      template:
+        '<div class="card bg-light mb-3" style="max-width: 18rem;">\
+            <div class="card-header"><input :value="group.title"></div>\
+            <button v-if="group.cards.length > 0" type="button" class="btn btn-primary" v-on:click="vote(text)">Vote</button>\
+            <div>{{group.votes}}</div>\
+            <div class="card-body" droppable="true" v-on:dragover="dragover" v-on:drop="drop">\
+              <card-item v-for="card in group.cards" v-bind:card="card" v-bind:key="card.id"></card-item>\
+            </div>\
+          </div> ',
+      methods: {
+        dragover: function (ev) {
+          ev.preventDefault();
+        },
+        drop: function (ev) {
+          ev.preventDefault();
+          var move = { from: ev.dataTransfer.getData("from"), to: this.group.title, card: JSON.parse(ev.dataTransfer.getData("card")) }
+          socket.emit('moveCard', move)
+        },
+        vote: function (ev) {
+          var vote = { userid: app.userid, title: this.group.title }
+          socket.emit('vote', vote)
+        }
+      }
+    })
+
+    var app = new Vue({
+      el: '#app',
+      data: {
+        userid: -1,
+        // goodCards: [{ text: "The nice things we did", user: "5", type: true }, { text: "The good the better and the nice", user: "0", type: true }],
+        // badCards: [{ text: "Why did you do that?", user: "0", type: false }, { text: "OMG NOOB OMG", user: "1", type: false }],
+        goodCards: [],
+        badCards: [],
+        votes: [],
+        groups: [],
+        actions: [],
+        message: 'Hello Vue!'
+      },
+      methods: {
+        startGrouping: function () {
+          socket.emit('startGrouping')
+        }
+      }
+    })
+    socket.on('connected', (userid) => {
+      app.userid = userid
+    })
+
+    socket.on('group', (groups) => {
+      app.groups = groups
+    })
+
+    socket.on('cardMoved', (groups) => {
+      app.groups = groups
+    })
+
+    socket.on('card', (card) => {
+      if (card.type) {
+        app.goodCards.push(card)
+      } else {
+        app.badCards.push(card)
+      }
+    })
+  </script>
+</body>
+
+
+</html>
