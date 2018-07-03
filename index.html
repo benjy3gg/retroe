@@ -31,7 +31,7 @@
       </div>
       <div class="row">
         <div class="col align-self-center">
-          <button type="button" class="btn btn-primary" v-on:click="startGrouping()">Send</button>
+          <button type="button" class="btn btn-primary" v-on:click="startGrouping()">Start Grouping</button>
           <group-box v-for="group in groups" v-bind:group="group">
         </div>
         </v-for>
@@ -160,6 +160,10 @@
       } else {
         app.badCards.push(card)
       }
+    })
+
+    socket.on('voteFailed', () => {
+      alert('You voted already')
     })
   </script>
 </body>
